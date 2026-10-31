@@ -10,6 +10,14 @@ Method OnRequest(pRequest As GraphFraud.Msg.BatchRequest,
   If '$IsObject(pResponse) Quit $System.Status.Error(5001,"GraphFraud.Score returned no response")
   Set evidence = ##class(%DynamicAbstractObject).%FromJSON(pResponse.EvidenceJSON)
   Set count = evidence.%Get("case_count")
+  // Never present a bounded / truncated graph search as a clean screening result.
+  // This branch precedes both MONITOR and the AI decision, regardless of count.
+  If evidence.%Get("analysis_truncated") {
+    Set pResponse.Decision = "INCOMPLETE_REVIEW"
+    Set pResponse.AgentExplanation = "Search limit reached. Graph analysis is incomplete; human review required."
+    Set pResponse.AgentUsed = 0
+    Quit $$$OK
+  }
   If count<1 {
     Set pResponse.Decision = "MONITOR"
     Set pResponse.AgentExplanation = "No defined graph indicator found in this batch."

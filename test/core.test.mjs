@@ -91,3 +91,39 @@ test('accepts large but safe minor-unit amounts without overflow',()=>{
   const r=assess(xs,{threshold_minor:amount*3});
   assert.ok(r.cases.some(c=>c.kind==='fan_in_out'));
 });
+
+// Dense DAG: hundreds of transactions but zero actual account-return cycles.
+// Without a bounded DFS the path count grows combinatorially with graph density.
+test('dense acyclic transaction graph terminates and never claims clean analysis',()=>{
+  const xs=[];
+  let n=0;
+  for(let a=0;a<32;a++)for(let b=a+1;b<32;b++){
+    xs.push({id:'E'+(++n),from:'acct'+a,to:'acct'+b,
+      amount_minor:100,currency:'USD',timestamp:'2026-10-31T12:00:00Z'});
+  }
+  const start=performance.now();
+  const result=assess(xs);
+  assert.equal(result.case_count,0);
+  assert.equal(result.analysis_truncated,true);
+  assert.equal(result.suggested_route,'INCOMPLETE_REVIEW');
+  assert.equal(result.search_limits.cycle_edges_examined,25000);
+  assert.ok(performance.now()-start<2000,'dense graph bounded under 2 seconds');
+});
+test('normal sparse batches report complete search and safe monitor route',()=>{
+  const r=assess([tx('X','one','two',10,1)]);
+  assert.equal(r.analysis_truncated,false);
+  assert.equal(r.suggested_route,'MONITOR');
+});
+test('truncated graph cannot suppress independently detected cases',()=>{
+  const xs=[];
+  let n=0;
+  for(let a=0;a<31;a++)for(let b=a+1;b<31;b++)
+    xs.push({id:'E'+(++n),from:'acct'+a,to:'acct'+b,
+      amount_minor:100,currency:'USD',timestamp:'2026-10-31T12:00:00Z'});
+  // Include a separate, obvious pattern, which must still be found after DFS caps.
+  const base=[tx('A','p','q',450000,13),tx('B','p','q',400000,14),tx('C','p','q',420000,15)];
+  const r=assess([...xs,...base]);
+  assert.equal(r.analysis_truncated,true);
+  assert.equal(r.suggested_route,'HUMAN_REVIEW');
+  assert.ok(r.cases.some(c=>c.kind==='split_payments'));
+});

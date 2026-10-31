@@ -5,6 +5,8 @@
  */
 const LIMIT = 500;
 const MAX_CASES = 40;
+// Dense multigraphs can generate exponentially many short paths.
+const MAX_CYCLE_EDGE_CHECKS = 25000;
 const ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
 
@@ -43,11 +45,16 @@ function emit(cases, kind, currency, txs, details) {
 function cycles(rows,cases,windowMs) {
   const outgoing=new Map();
   for(const t of rows){if(!outgoing.has(t.from))outgoing.set(t.from,[]);outgoing.get(t.from).push(t);}
+  let examined=0,truncated=false;
   for(const start of rows){
+    if(truncated || cases.length>=MAX_CASES){truncated=true;break;}
     const visited=new Set([start.from,start.to]);
     function dfs(account,path) {
-      if(path.length>=5 || cases.length>=MAX_CASES)return;
+      if(path.length>=5 || truncated)return;
       for(const edge of outgoing.get(account)||[]){
+        if(cases.length>=MAX_CASES){truncated=true;break;}
+        if(examined>=MAX_CYCLE_EDGE_CHECKS){truncated=true;break;}
+        examined++;
         if(edge.currency!==start.currency || edge.ms<path[path.length-1].ms ||
            edge.ms-start.ms>windowMs || path.some(p=>p.id===edge.id))continue;
         if(edge.to===start.from) {
@@ -59,10 +66,12 @@ function cycles(rows,cases,windowMs) {
         }
         if(visited.has(edge.to))continue;
         visited.add(edge.to);dfs(edge.to,[...path,edge]);visited.delete(edge.to);
+        if(truncated)break;
       }
     }
     dfs(start.to,[start]);
   }
+  return {examined_edges:examined,truncated};
 }
 function convergence(rows,cases,windowMs,ratio) {
   const incoming=new Map();
@@ -113,18 +122,22 @@ export function assess(batch, config={}) {
      !Number.isSafeInteger(threshold)||threshold<1||
      !Number.isSafeInteger(ratio)||ratio<1||ratio>100)throw new Error('invalid policy');
   const windowMs=hours*3600000,cases=[];
-  cycles(txs,cases,windowMs);
+  const cycleSearch=cycles(txs,cases,windowMs);
   convergence(txs,cases,windowMs,ratio);
   structuring(txs,cases,windowMs,threshold);
+  const analysisTruncated=cycleSearch.truncated || cases.length>=MAX_CASES;
   const kindOrder={temporal_cycle:0,fan_in_out:1,split_payments:2};
   cases.sort((a,b)=>kindOrder[a.kind]-kindOrder[b.kind]||a.signature.localeCompare(b.signature));
   return {
     schema_version:'1.0',engine:'GraphFraud TemporalGraph',transactions_processed:txs.length,
     policy:{window_hours:hours,threshold_minor:threshold,fan_out_min_percent:ratio},
     cases,case_count:cases.length,
-    suggested_route:cases.length?'HUMAN_REVIEW':'MONITOR',
+    analysis_truncated:analysisTruncated,
+    search_limits:{max_cases:MAX_CASES,max_cycle_edge_checks:MAX_CYCLE_EDGE_CHECKS,
+      cycle_edges_examined:cycleSearch.examined_edges},
+    suggested_route:cases.length?'HUMAN_REVIEW':analysisTruncated?'INCOMPLETE_REVIEW':'MONITOR',
     ai_decision:null,
-    disclaimer:'Indicators are not proof of fraud. No transactions were blocked. Human review required for adverse action.'
+    disclaimer:'Indicators are not proof of fraud. Incomplete analyses require review. No transactions were blocked. Human review required for adverse action.'
   };
 }
 export function assessJSON(json) {

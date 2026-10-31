@@ -2,7 +2,7 @@
 
 **Author:** Daniel Paluszek · **Contest target:** [InterSystems AI Agents in Interoperability Workflows 2026](https://openexchange.intersystems.com/contest/49) · **License:** MIT
 
-> **Status (31 October 2026):** original deterministic engine implemented and 16/16 engine tests pass in isolated V8 execution; IRIS production/AI Hub integration source is present **but has not yet been compiled, installed, started or tested against the licensed EAP build**. There is no claim of contest eligibility, submitted app, a working AI Hub provider, fraud identification or a prize.
+> **Status (31 October 2026):** original deterministic engine implemented and 21/21 Node.js native tests pass locally (including the HTTP endpoint); IRIS production/AI Hub integration source is present **but has not yet been compiled, installed, started or tested against the licensed EAP build**. There is no claim of contest eligibility, submitted app, a working AI Hub provider, fraud identification or a prize.
 
 ## What it does
 
@@ -51,9 +51,19 @@ node src/server.mjs
 curl -sS -H 'Content-Type: application/json' --data-binary @demo_batch.json http://127.0.0.1:8787/assess
 ```
 
-Expected motif kinds (synthetic sample): `temporal_cycle` (C1,C2,C3), `fan_in_out` (M1–M4), `split_payments` (S1–S3). `N1` stays unflagged. The 16 engine tests were executed from the committed source in an isolated V8 harness (not Node's native runner); an additional Node HTTP endpoint test is included but has not been run here. Offline checks cover chronology, currency partitioning, duplicate identifiers, integer bounds and fallbacks. All amounts use **integer minor units** (e.g. cents), never floating-point amounts. Output includes `ai_decision:null` until IRIS processes a case.
+Expected motif kinds (synthetic sample): `temporal_cycle` (C1,C2,C3), `fan_in_out` (M1–M4), `split_payments` (S1–S3). `N1` stays unflagged. All 21 tests were executed in native Node.js v22.16.0 from byte-identical Git blobs, including the HTTP evidence server, a dense-graph search-budget regression and a static IRIS router contract check. This is **not** an IRIS runtime or AI Hub integration test. Offline checks cover chronology, currency partitioning, duplicate identifiers, integer bounds, fallback and search truncation. All amounts use **integer minor units** (e.g. cents), never floating-point amounts. Output includes `ai_decision:null` until IRIS processes a case.
 
 HTTP evidence server is intended for a **private Docker Compose network**. On a local host it binds to 127.0.0.1. Do not expose its `/assess` endpoint publicly or pass PII. No request is written to disk by the server.
+
+## Bounded search and honest incomplete status
+
+The 500-transaction batch limit does **not** prevent combinatorial path explosion on dense directed graphs. To prevent resource exhaustion, the time-respecting cycle DFS now stops after **25,000 inspected candidate edges** or **40 total cases**, marking `analysis_truncated:true`; `search_limits` reports the actual budget use. The other two motif detectors still execute after the cycle budget is exhausted.
+
+- When no cases were found **and analysis is complete**, the route is `MONITOR`.
+- When no cases were found **but cycle search was truncated**, the route is `INCOMPLETE_REVIEW`, never `MONITOR`.
+- When any cases were found (with or without truncation), the engine route is `HUMAN_REVIEW`. IRIS Router overrides any truncated batch to `INCOMPLETE_REVIEW` **before** calling AI Hub; `AgentUsed=0`. Thus a model never rationalizes an incomplete search into a safe-looking result.
+
+A native regression test generates a **496-edge dense acyclic graph** and confirms that the search terminates under budget, marks the result incomplete and does not silently report safety. Another test confirms that a real split-payment indicator can still be detected when cycle search terminates early. There are **21/21 native Node tests passing**, including the HTTP service; the ObjectScript status test is static and **does not prove IRIS compiles**.
 
 ## InterSystems setup (unverified until real EAP build 154 is available)
 
