@@ -18,6 +18,7 @@ ClassMethod Run() As %Status
   Quit:$$$ISERR(sc) sc
   Write "GraphFraud decision: ",report.Decision,!
   Write "IRIS AI Hub used: ",report.AgentUsed,!
+  If report.AgentUsed=1 Write "GRAPHFRAUD_AI_HUB_USED",!
   Write "Agent outcome: ",report.AgentExplanation,!
   Write "Deterministic graph evidence: ",report.EvidenceJSON,!
   Quit $$$OK

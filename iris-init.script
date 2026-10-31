@@ -1,0 +1,4 @@
+Set compileStatus = $SYSTEM.OBJ.LoadDir("/opt/graphfraud/iris", "ck", .compileErrors, 1)
+If $SYSTEM.Status.IsError(compileStatus) { Write "GRAPHFRAUD_COMPILE_FAILED: ",$SYSTEM.Status.GetErrorText(compileStatus),! Halt }
+Write "GRAPHFRAUD_CLASS_COMPILE_OK",!
+Halt

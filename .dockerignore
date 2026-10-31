@@ -1,0 +1,8 @@
+# Allowlist: only original source, deterministic fixture, and build instructions.
+# Do not transmit secrets, the EAP image archive or local .git files to Docker.
+**
+!Dockerfile.iris
+!iris/
+!iris/**
+!iris-init.script
+!demo_batch.json

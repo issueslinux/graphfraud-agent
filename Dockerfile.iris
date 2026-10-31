@@ -1,0 +1,20 @@
+# The base image must be loaded from the authenticated InterSystems AI Hub EAP portal.
+# Do not publish the base image or any derived image to a public registry.
+ARG IRIS_BASE=iris-community:2026.3.0AI.154.0
+FROM ${IRIS_BASE}
+
+WORKDIR /opt/graphfraud
+COPY iris/ /opt/graphfraud/iris/
+COPY iris-init.script /opt/graphfraud/iris-init.script
+COPY demo_batch.json /opt/graphfraud/demo_batch.json
+
+# Compile classes during image build, not at the first incoming request.
+# Fail closed: the success marker is emitted only after a successful IRIS compile.
+RUN set -eu; \
+    iris start IRIS; \
+    trap 'iris stop IRIS quietly || true' EXIT; \
+    iris session IRIS -U USER < /opt/graphfraud/iris-init.script > /tmp/graphfraud-build.log 2>&1; \
+    cat /tmp/graphfraud-build.log; \
+    grep -qx 'GRAPHFRAUD_CLASS_COMPILE_OK' /tmp/graphfraud-build.log; \
+    iris stop IRIS quietly; \
+    trap - EXIT

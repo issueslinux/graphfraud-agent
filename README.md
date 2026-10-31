@@ -78,23 +78,20 @@ A native regression test generates a **496-edge dense acyclic graph** and confir
 3. Supply an OpenAI model key to the IRIS container **only for the live AI-agent demo** (no provider credits are included in the contest); omit the key to exercise conservative fallback:
    ```bash
    export OPENAI_API_KEY='<key from your own secret store>'
-   docker compose up -d
+   docker compose up -d --build
    docker compose ps
    ```
-   Prefer a local `.env` excluded from Git for evaluation; use secret-management tooling in production. **Never commit API keys** or the EAP image.
-4. Compile all ObjectScript classes in the **USER** namespace inside the IRIS container:
+   Prefer a local `.env` excluded from Git for evaluation; use secret-management tooling in production. **Never commit API keys** or the EAP image. The **local-only** `Dockerfile.iris` derives from the image you loaded and compiles all ObjectScript classes in the USER namespace during image build. A failed compile **fails the Docker image build** instead of producing an apparently usable IRIS container. This code does not copy the proprietary EAP binary into GitHub or a public registry.
+4. Start the IRIS Interoperability production and run its synthetic example **after** the evidence server passes its Docker health check:
    ```bash
-   docker compose exec iris iris session iris -U USER
-   USER> Set sc=$SYSTEM.OBJ.LoadDir("/opt/graphfraud/iris","ck",.errors,1)
-   USER> Write $SYSTEM.Status.GetErrorText(sc),!
+   bash scripts/run-demo.sh --require-ai      # default: fails unless %AI.Agent was actually used
+   # For deterministic flow checks without an LLM key:
+   bash scripts/run-demo.sh --allow-fallback
    ```
-   Require a success status and inspect compiler output before continuing. Run the production and demo **within the IRIS terminal**, still in `USER`:
-   ```objectscript
-   Set sc=##class(Ens.Director).StartProduction("GraphFraud.Interop.Production")
-   Write $SYSTEM.Status.GetErrorText(sc),!
-   Do ##class(GraphFraud.Interop.Demo).Run()
-   ```
-5. Verify live production messages (BS → BP → BO) in the Interoperability message viewer and compare output to offline JSON. `AgentUsed=1` and a valid `HIGH_PRIORITY_REVIEW` or `STANDARD_REVIEW` are required to claim the **AI Hub agent actually ran**. When no key is configured, `AgentUsed=0`, even if the evidence engine succeeded.
+   The helper invokes `docker compose up -d --build`, then executes `run-demo.script` inside a real IRIS USER terminal: `Ens.Director.StartProduction("GraphFraud.Interop.Production")` followed by `GraphFraud.Interop.Demo.Run()`. It requires the exact `GRAPHFRAUD_DEMO_OK` IRIS receipt after both returned statuses succeed; **by default it additionally requires `GRAPHFRAUD_AI_HUB_USED`**, emitted only when `CaseReport.AgentUsed=1`. A model-less `--allow-fallback` demo can confirm the deterministic workflow but does not meet the AI-agent requirement. It does not equate Docker startup with successful graph analysis. This demo script starts the production once; if it is already running, confirm its status using the IRIS Management Portal before rerunning. When testing the Node evidence engine alone, use the separate offline commands above, which do not require Docker.
+5. Verify live production messages (BS → BP → BO) in the Interoperability message viewer and compare output to offline JSON. `AgentUsed=1` and a valid `HIGH_PRIORITY_REVIEW` or `STANDARD_REVIEW` are required to claim the **AI Hub agent actually ran**. A successful `GRAPHFRAUD_DEMO_OK` proves only the production workflow; absence of `GRAPHFRAUD_AI_HUB_USED` means the model call remains unverified. The default `--require-ai` helper fails with exit status 3 in this situation, rather than falsely reporting a full contest-ready AI demo. **No successful EAP build or IRIS model run has yet been verified.**
+
+**Packaging verification:** `node --test test/packaging.test.mjs test/demo-wrapper.test.mjs` runs eight native tests of EAP image tag, local derived-image build configuration, compiler-success gate, internal evidence endpoint, Docker health gate, and positive/negative mocked IRIS demo receipts. The Compose YAML also parses under PyYAML. These checks are static or mocked: **Docker is not installed in the assistant's current runner**, and the actual EAP image cannot be accessed without the authenticated Early Access Portal download. IRIS build/test is still unverified.
 
 **Integration caution:** exact ObjectScript classes and provider APIs were written against official documentation and AI Hub template examples, but **could not be compiled without the licensed 154 image**. Expect to verify `%AI.Agent` and adapter configuration specifically on build 154; do not represent this as an end-to-end PASS before then. Some AI Hub EAP builds lack the private web server; this workflow uses the IRIS terminal and native Interoperability, not the management web UI as a prerequisite.
 
@@ -124,3 +121,5 @@ The official event expects **a functioning IRIS Interoperability workflow using 
 ## References / licensing
 
 InterSystems technologies referenced here are licensed separately. This repository contains only original MIT-licensed GraphFraud source and synthetic transactions, **no** InterSystems AI Hub image or proprietary SDK files. References: [AI Hub Dev Template](https://github.com/intersystems-community/ai-hub-dev-template), [IRIS Business Process API](https://docs.intersystems.com/irislatest/csp/documatic/%25CSP.Documatic.cls?CLASSNAME=Ens.BusinessProcess&LIBRARY=ENSLIB), [HTTP OutboundAdapter](https://docs.intersystems.com/irislatest/csp/documatic/%25CSP.Documatic.cls?CLASSNAME=EnsLib.HTTP.OutboundAdapter&LIBRARY=ENSLIB), [Business Service invocation](https://irisdocs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=EGDV_adv).
+
+**Build-context security:** `.dockerignore` allows only `Dockerfile.iris`, `iris/`, `iris-init.script` and the synthetic demo JSON into the local IRIS image build context. Credentials, EAP tarballs, Git metadata and unrelated files are excluded from that context.
