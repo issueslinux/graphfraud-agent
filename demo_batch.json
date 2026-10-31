@@ -1,0 +1,97 @@
+{
+  "transactions": [
+    {
+      "id": "C1",
+      "from": "acct_A",
+      "to": "acct_B",
+      "amount_minor": 1120000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T01:00:00Z"
+    },
+    {
+      "id": "C2",
+      "from": "acct_B",
+      "to": "acct_C",
+      "amount_minor": 1090000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T02:00:00Z"
+    },
+    {
+      "id": "C3",
+      "from": "acct_C",
+      "to": "acct_A",
+      "amount_minor": 1060000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T03:00:00Z"
+    },
+    {
+      "id": "M1",
+      "from": "acct_S1",
+      "to": "acct_HUB",
+      "amount_minor": 500000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T04:00:00Z"
+    },
+    {
+      "id": "M2",
+      "from": "acct_S2",
+      "to": "acct_HUB",
+      "amount_minor": 600000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T05:00:00Z"
+    },
+    {
+      "id": "M3",
+      "from": "acct_S3",
+      "to": "acct_HUB",
+      "amount_minor": 700000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T06:00:00Z"
+    },
+    {
+      "id": "M4",
+      "from": "acct_HUB",
+      "to": "acct_OUT",
+      "amount_minor": 1700000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T07:00:00Z"
+    },
+    {
+      "id": "S1",
+      "from": "acct_P",
+      "to": "acct_Q",
+      "amount_minor": 950000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T08:00:00Z"
+    },
+    {
+      "id": "S2",
+      "from": "acct_P",
+      "to": "acct_Q",
+      "amount_minor": 960000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T09:00:00Z"
+    },
+    {
+      "id": "S3",
+      "from": "acct_P",
+      "to": "acct_Q",
+      "amount_minor": 970000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T10:00:00Z"
+    },
+    {
+      "id": "N1",
+      "from": "acct_N",
+      "to": "acct_R",
+      "amount_minor": 1000,
+      "currency": "USD",
+      "timestamp": "2026-10-31T11:00:00Z"
+    }
+  ],
+  "policy": {
+    "window_hours": 24,
+    "threshold_minor": 1000000,
+    "fan_out_min_percent": 70
+  }
+}

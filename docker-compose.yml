@@ -1,0 +1,28 @@
+# Requires the contestant-downloaded *local* InterSystems EAP AI Hub build 154.
+# Never push this non-public image to any registry.
+services:
+  graphfraud-evidence:
+    image: node:22-alpine
+    working_dir: /work
+    volumes:
+      - ./src:/work/src:ro
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8787"
+    command: ["node", "src/server.mjs"]
+    expose:
+      - "8787"
+    restart: unless-stopped
+  iris:
+    image: iris-community:2026.3.0AI.154.0
+    hostname: graphfraud-iris
+    depends_on:
+      - graphfraud-evidence
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./iris:/opt/graphfraud/iris:ro
+      - ./demo_batch.json:/opt/graphfraud/demo_batch.json:ro
+    ports:
+      - "127.0.0.1:1972:1972"
+    restart: unless-stopped
