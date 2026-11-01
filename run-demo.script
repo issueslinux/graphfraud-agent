@@ -1,6 +1,12 @@
-Set startStatus = ##class(Ens.Director).StartProduction("GraphFraud.Interop.Production")
-If $SYSTEM.Status.IsError(startStatus) { Write "GRAPHFRAUD_PRODUCTION_START_FAILED: ",$SYSTEM.Status.GetErrorText(startStatus),! Halt }
+Set target = "GraphFraud.Interop.Production"
+Set statusSC = ##class(Ens.Director).GetProductionStatus(.runningName,.runningState)
+If $SYSTEM.Status.IsError(statusSC) Write "GRAPHFRAUD_PRODUCTION_STATUS_FAILED: ",$SYSTEM.Status.GetErrorText(statusSC),! Halt
+If runningState=1,runningName'=target Write "GRAPHFRAUD_WRONG_PRODUCTION_RUNNING: ",runningName,! Halt
+If runningState'=1,runningState'=2 Write "GRAPHFRAUD_PRODUCTION_NOT_READY: state=",runningState,! Halt
+If runningState=1 Write "GRAPHFRAUD_PRODUCTION_ALREADY_RUNNING",!
+If runningState=2 Set startStatus = ##class(Ens.Director).StartProduction(target)
+If runningState=2,$SYSTEM.Status.IsError(startStatus) Write "GRAPHFRAUD_PRODUCTION_START_FAILED: ",$SYSTEM.Status.GetErrorText(startStatus),! Halt
 Set demoStatus = ##class(GraphFraud.Interop.Demo).Run()
-If $SYSTEM.Status.IsError(demoStatus) { Write "GRAPHFRAUD_DEMO_FAILED: ",$SYSTEM.Status.GetErrorText(demoStatus),! Halt }
+If $SYSTEM.Status.IsError(demoStatus) Write "GRAPHFRAUD_DEMO_FAILED: ",$SYSTEM.Status.GetErrorText(demoStatus),! Halt
 Write "GRAPHFRAUD_DEMO_OK",!
 Halt

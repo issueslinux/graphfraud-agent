@@ -41,3 +41,15 @@ Public repository: **https://github.com/issueslinux/graphfraud-agent**. Publishe
 4. **External competition:** public repository is available, but there is **no Open Exchange application entry or submission receipt** as of this report.
 
 All observations refer to the owner's authorized environment on **2026-11-01**. Graph patterns are heuristic and cannot establish fraud or justify payment denial.
+
+## Real InterSystems EAP 154 compilation and local AI model run (1 Nov 2026)
+
+- The owner supplied the Community EAP build 154 archive inside /mnt/nvme_fast/hunter/data/iris/. The InterSystems proprietary archive, image and any derived layers were never pushed to GitHub. Rootless Docker imported the owner-provided image and the private GraphFraud Dockerfile created graphfraud-aihub:local.
+- The first actual IRIS compile reported 11 ObjectScript errors from returning values with QUIT inside nested blocks. Corrected Router, ScoreOperation and Demo by using RETURN where required; the next build compiled **all eight classes** and produced GRAPHFRAUD_CLASS_COMPILE_OK.
+- A real GraphFraud.Interop.Production started on IRIS build **2026.3.0AI.154.0com**; its Business Service -> Business Process -> HTTP Business Operation retrieved Node evidence on the private Docker network and identified all three expected synthetic motifs.
+- Before an LLM was available, the real workflow returned STANDARD_REVIEW with AgentUsed=0 as designed.
+- A private Ollama service pulled **qwen2.5:1.5b-instruct** (986 MB). IRIS %AI.Agent was configured with the OpenAI-compatible endpoint on the private Docker network. A real POST /v1/chat/completions returned HTTP 200 in Ollama logs.
+- **Real AI Hub use confirmed:** the synthetic example emitted AgentUsed=1, GRAPHFRAUD_AI_HUB_USED and GRAPHFRAUD_DEMO_OK; first run returned HIGH_PRIORITY_REVIEW. A repeat run on identical evidence returned STANDARD_REVIEW, also with AgentUsed=1. Priority is model-dependent and cannot be construed as a fraud finding or calibrated score.
+- The IRIS terminal script was fixed after a real repeat failure: Ens.Director.StartProduction reports an error when the correct production is already running. The new script checks GetProductionStatus and reuses the expected running production, refusing a different production or invalid state. The complete fail-closed helper bash scripts/run-demo.sh --require-ai then **returned exit code 0** on the real system.
+- **32/32 native Node tests pass** with the additional local-model and ObjectScript contract checks. No paid provider key required; no bank data used.
+- **NOT SUBMITTED TO OPEN EXCHANGE**: public code and working runtime are proven, but there is not yet a registered contest entry, external receipt, organizer acceptance or prize.

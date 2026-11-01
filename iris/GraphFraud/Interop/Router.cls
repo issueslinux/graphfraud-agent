@@ -30,13 +30,13 @@ Method OnRequest(pRequest As GraphFraud.Msg.BatchRequest,
   Try {
     Set agent = ##class(GraphFraud.Agent.RiskReviewer).%New()
     Set tInit = agent.%Init()
-    If $$$ISERR(tInit) Quit $$$OK
+    If $$$ISERR(tInit) Return $$$OK
     Set session = agent.CreateSession()
     Set reply = agent.Chat(session,
       "Classify investigation priority for these machine-detected indicators. "_
       "They are not proof of fraud. Reply with PRIORITY=HIGH or PRIORITY=STANDARD only. "_
       pResponse.EvidenceJSON)
-    If '$IsObject(reply) Quit $$$OK
+    If '$IsObject(reply) Return $$$OK
     Set answer = $ZStrip(reply.Content,"<>W")
     If answer="PRIORITY=HIGH" {
       Set pResponse.Decision = "HIGH_PRIORITY_REVIEW"

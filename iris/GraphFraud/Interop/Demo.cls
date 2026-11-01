@@ -10,7 +10,7 @@ ClassMethod Run() As %Status
   Set text = ""
   While 'file.AtEnd {
     Set text = text_file.Read(32000)
-    If $Length(text)>250000 Quit $System.Status.Error(5001,"Demo batch too large")
+    If $Length(text)>250000 Return $System.Status.Error(5001,"Demo batch too large")
   }
   Set sc = ##class(Ens.Director).CreateBusinessService("GraphFraud.Inbound",.svc)
   Quit:$$$ISERR(sc) sc

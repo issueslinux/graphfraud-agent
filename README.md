@@ -2,7 +2,7 @@
 
 **Author:** Daniel Paluszek · **Contest target:** [InterSystems AI Agents in Interoperability Workflows 2026](https://openexchange.intersystems.com/contest/49) · **License:** MIT
 
-> **Status (1 November 2026):** original deterministic engine implemented; **29/29 native Node.js tests PASS** on hexagony-01 and actual HTTP smoke tests in rootless Docker returned 200/200 and the three correct motifs. Evidence: [native execution report](VALIDATION_2026-11-01.md). IRIS production/AI Hub integration source is present **but has not yet been compiled, installed, started or tested against the licensed EAP build**. There is no claim of contest eligibility, submitted app, a working AI Hub provider, fraud identification or a prize.
+> **Verified live on 1 November 2026:** InterSystems IRIS AI Hub Community 2026.3.0AI.154.0 compiled all 8 GraphFraud classes. A real Interoperability BS -> BP -> HTTP BO -> Node evidence -> native %AI.Agent -> local Ollama Qwen 2.5 1.5B demo returned 3 expected motifs, AgentUsed=1 and both GRAPHFRAUD_AI_HUB_USED and GRAPHFRAUD_DEMO_OK. 32/32 native Node tests PASS. Model priorities vary between runs and never prove fraud. See [live validation report](VALIDATION_2026-11-01.md). **Open Exchange entry NOT SUBMITTED.**
 
 ## What it does
 
@@ -63,9 +63,9 @@ The 500-transaction batch limit does **not** prevent combinatorial path explosio
 - When no cases were found **but cycle search was truncated**, the route is `INCOMPLETE_REVIEW`, never `MONITOR`.
 - When any cases were found (with or without truncation), the engine route is `HUMAN_REVIEW`. IRIS Router overrides any truncated batch to `INCOMPLETE_REVIEW` **before** calling AI Hub; `AgentUsed=0`. Thus a model never rationalizes an incomplete search into a safe-looking result.
 
-A native regression test generates a **496-edge dense acyclic graph** and confirms that the search terminates under budget, marks the result incomplete and does not silently report safety. Another test confirms that a real split-payment indicator can still be detected when cycle search terminates early. There are **21/21 native Node tests passing**, including the HTTP service; the ObjectScript status test is static and **does not prove IRIS compiles**.
+A native regression test generates a **496-edge dense acyclic graph** and confirms that the search terminates under budget, marks the result incomplete and does not silently report safety. Another test confirms that a real split-payment indicator can still be detected when cycle search terminates early. There are **32/32 native Node tests passing**, plus genuine IRIS build 154 compilation and an actual AI Hub agent run.
 
-## InterSystems setup (unverified until real EAP build 154 is available)
+## InterSystems setup (verified against real IRIS AI Hub EAP build 154)
 
 1. Sign in to the [InterSystems AI Hub Early Access portal](https://evaluation.intersystems.com/Eval/early-access/AIHub). Download **IRIS AI Hub Community build 154**, not build 162:
    `iris-community-2026.3.0AI.154.0-docker.tar.gz` (x64) or `iris_arm64-community-2026.3.0AI.154.0-docker.tar.gz` for ARM64. This file is **not** in the repository and must not be redistributed.
@@ -75,7 +75,7 @@ A native regression test generates a **496-edge dense acyclic graph** and confir
    docker images                    # find the image name Docker just loaded
    docker tag 'ACTUAL_LONG_LOADED_IMAGE_NAME' iris-community:2026.3.0AI.154.0
    ```
-3. Supply an OpenAI model key to the IRIS container **only for the live AI-agent demo** (no provider credits are included in the contest); omit the key to exercise conservative fallback:
+3. Choose a local Ollama model (see verified local model instructions below) or supply an OpenAI key to the IRIS container; omit both to exercise conservative fallback:
    ```bash
    export OPENAI_API_KEY='<key from your own secret store>'
    docker compose up -d --build
@@ -88,12 +88,26 @@ A native regression test generates a **496-edge dense acyclic graph** and confir
    # For deterministic flow checks without an LLM key:
    bash scripts/run-demo.sh --allow-fallback
    ```
-   The helper invokes `docker compose up -d --build`, then executes `run-demo.script` inside a real IRIS USER terminal: `Ens.Director.StartProduction("GraphFraud.Interop.Production")` followed by `GraphFraud.Interop.Demo.Run()`. It requires the exact `GRAPHFRAUD_DEMO_OK` IRIS receipt after both returned statuses succeed; **by default it additionally requires `GRAPHFRAUD_AI_HUB_USED`**, emitted only when `CaseReport.AgentUsed=1`. A model-less `--allow-fallback` demo can confirm the deterministic workflow but does not meet the AI-agent requirement. It does not equate Docker startup with successful graph analysis. This demo script starts the production once; if it is already running, confirm its status using the IRIS Management Portal before rerunning. When testing the Node evidence engine alone, use the separate offline commands above, which do not require Docker.
-5. Verify live production messages (BS → BP → BO) in the Interoperability message viewer and compare output to offline JSON. `AgentUsed=1` and a valid `HIGH_PRIORITY_REVIEW` or `STANDARD_REVIEW` are required to claim the **AI Hub agent actually ran**. A successful `GRAPHFRAUD_DEMO_OK` proves only the production workflow; absence of `GRAPHFRAUD_AI_HUB_USED` means the model call remains unverified. The default `--require-ai` helper fails with exit status 3 in this situation, rather than falsely reporting a full contest-ready AI demo. **No successful EAP build or IRIS model run has yet been verified.**
+   The helper invokes `docker compose up -d --build`, then executes `run-demo.script` inside a real IRIS USER terminal: `Ens.Director.StartProduction("GraphFraud.Interop.Production")` followed by `GraphFraud.Interop.Demo.Run()`. It requires the exact `GRAPHFRAUD_DEMO_OK` IRIS receipt after both returned statuses succeed; **by default it additionally requires `GRAPHFRAUD_AI_HUB_USED`**, emitted only when `CaseReport.AgentUsed=1`. A model-less `--allow-fallback` demo can confirm the deterministic workflow but does not meet the AI-agent requirement. It does not equate Docker startup with successful graph analysis. The script now uses Ens.Director.GetProductionStatus to reuse an already-running named GraphFraud production; a different, suspended or troubled production is rejected. When testing the Node evidence engine alone, use the separate offline commands above, which do not require Docker.
+5. Verify live production messages (BS → BP → BO) in the Interoperability message viewer and compare output to offline JSON. `AgentUsed=1` and a valid `HIGH_PRIORITY_REVIEW` or `STANDARD_REVIEW` are required to claim the **AI Hub agent actually ran**. A successful `GRAPHFRAUD_DEMO_OK` proves only the production workflow; absence of `GRAPHFRAUD_AI_HUB_USED` means the model call remains unverified. The default `--require-ai` helper fails with exit status 3 in this situation, rather than falsely reporting a full contest-ready AI demo. **Native IRIS 154 compilation and an actual local-model AI Hub run have both been verified.**
 
-**Packaging verification:** `node --test test/packaging.test.mjs test/demo-wrapper.test.mjs` runs eight native tests of EAP image tag, local derived-image build configuration, compiler-success gate, internal evidence endpoint, Docker health gate, and positive/negative mocked IRIS demo receipts. The Compose YAML also parses under PyYAML. These checks are static or mocked: **Docker is not installed in the assistant's current runner**, and the actual EAP image cannot be accessed without the authenticated Early Access Portal download. IRIS build/test is still unverified.
+**Packaging verification:** 32 native Node tests PASS on hexagony-01. Real rootless Docker, InterSystems EAP 154 class compilation, actual BS/BP/BO workflow, private Ollama Chat Completions HTTP 200 and AI AgentUsed=1 were additionally observed. No source code or archive of the proprietary InterSystems image was published.
 
-**Integration caution:** exact ObjectScript classes and provider APIs were written against official documentation and AI Hub template examples, but **could not be compiled without the licensed 154 image**. Expect to verify `%AI.Agent` and adapter configuration specifically on build 154; do not represent this as an end-to-end PASS before then. Some AI Hub EAP builds lack the private web server; this workflow uses the IRIS terminal and native Interoperability, not the management web UI as a prerequisite.
+**Integration status:** the eight classes compile on the actual EAP 154 image and the synthetic Interoperability + AI Hub demo runs. This is early-access software; the result is a research demonstrator, not a fraud verdict or a validated banking deployment.
+
+
+### Verified private local-model path (no external API key)
+
+The contestant-downloaded IRIS Community 2026.3.0AI.154.0 image must already be loaded and retagged locally. To reproduce the 1 November live demonstration, run the following inside the GraphFraud repository (no proprietary images or model weights are committed):
+
+    docker compose --profile local-llm up -d ollama
+    docker compose exec -T ollama ollama pull qwen2.5:1.5b-instruct
+    export OLLAMA_BASE_URL=http://ollama:11434/v1
+    export OLLAMA_MODEL=qwen2.5:1.5b-instruct
+    docker compose --profile local-llm up -d --build iris
+    bash scripts/run-demo.sh --require-ai
+
+The private Ollama service is optional and exposes no port on the host. The Agent sets its IRIS %AI.Provider to the OpenAI-compatible local endpoint when OLLAMA_BASE_URL and OLLAMA_MODEL are configured; otherwise it supports an external OPENAI_API_KEY or returns the conservative no-AI review fallback. The model is a 986 MB Qwen2.5 instruction-tuned 1.5B parameter model. **AI priorities can differ on repeated runs; both HIGH and STANDARD are suggestions for human investigation, never evidence of fraud.**
 
 ## Input/output contract
 
@@ -116,7 +130,7 @@ The batch limit is intentional: larger production graphs need streaming window s
 
 The official event expects **a functioning IRIS Interoperability workflow using IRIS AI Hub agent**, the EAP Community **build 154**, a **public open-source GitHub/GitLab** repository, English README + running instructions, and a new Open Exchange project entry. Up to three entries per developer. [Official competition requirements](https://openexchange.intersystems.com/contest/49), [announcement/build 154 clarification](https://community.intersystems.com/post/intersystems-programming-contest-ai-agents-interoperability-workflows).
 
-**As of 31 October 2026, only the source in Hunter is available; Hunter is private, so this is NOT yet a qualifying public Open Exchange submission.** Need: EAP image, successful native compilation/interop tracing/AI Hub model invocation, public repository, Open Exchange registration. Registration deadline: **8 November 2026, 23:59:59 EST**. The contest's voting/judging stage follows. No claim is made of participation or payout before an external submission receipt exists.
+**As of 1 November 2026, the original source is public at https://github.com/issueslinux/graphfraud-agent and live IRIS+AI Hub operation is verified.** Only an actual Open Exchange contest package entry and externally confirmed submission are still missing.
 
 ## References / licensing
 

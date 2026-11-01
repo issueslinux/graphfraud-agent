@@ -22,24 +22,24 @@ Method ScoreBatch(pRequest As GraphFraud.Msg.BatchRequest,
   Set pResponse.AgentUsed = 0
   Try {
     Set sc = ..Adapter.Post(.httpResponse, "", pRequest.PayloadJSON)
-    If $$$ISERR(sc) Quit sc
-    If '$IsObject(httpResponse) Quit $System.Status.Error(5001,"Missing evidence response")
+    If $$$ISERR(sc) Return sc
+    If '$IsObject(httpResponse) Return $System.Status.Error(5001,"Missing evidence response")
     If httpResponse.StatusCode '= 200 {
-      Quit $System.Status.Error(5001,"Graph evidence service returned HTTP "_httpResponse.StatusCode)
+      Return $System.Status.Error(5001,"Graph evidence service returned HTTP "_httpResponse.StatusCode)
     }
-    If '$IsObject(httpResponse.Data) Quit $System.Status.Error(5001,"Evidence response has no body")
+    If '$IsObject(httpResponse.Data) Return $System.Status.Error(5001,"Evidence response has no body")
     Do httpResponse.Data.Rewind()
     Set text = ""
     While 'httpResponse.Data.AtEnd {
       Set text = text_httpResponse.Data.Read(32000)
-      If $Length(text)>250000 Quit $System.Status.Error(5001,"Evidence response too long")
+      If $Length(text)>250000 Return $System.Status.Error(5001,"Evidence response too long")
     }
     Set proof = ##class(%DynamicAbstractObject).%FromJSON(text)
-    If proof.%Get("schema_version") '="1.0" Quit $System.Status.Error(5001,"Unsupported evidence schema")
+    If proof.%Get("schema_version") '="1.0" Return $System.Status.Error(5001,"Unsupported evidence schema")
     Set pResponse.EvidenceJSON = text
-    Quit $$$OK
+    Return $$$OK
   } Catch ex {
-    Quit ex.AsStatus()
+    Return ex.AsStatus()
   }
 }
 }

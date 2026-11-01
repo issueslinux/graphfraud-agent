@@ -32,6 +32,18 @@ services:
         condition: service_healthy
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
     ports:
       - "127.0.0.1:1972:1972"
     restart: unless-stopped
+  ollama:
+    profiles: ["local-llm"]
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    expose:
+      - "11434"
+    restart: unless-stopped
+volumes:
+  ollama-models:
