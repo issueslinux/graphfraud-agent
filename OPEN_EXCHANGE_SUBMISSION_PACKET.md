@@ -1,6 +1,6 @@
 # GraphFraud Agent — Open Exchange contest submission packet (1 November 2026)
 
-**Current status (1 November 2026): application actually saved on Open Exchange and SENT FOR APPROVAL; authenticated owner dashboard confirms PENDING APPROVAL.** The contest 49 checkbox is selected, but organizer contest acceptance/public listing and any prize are **NOT CONFIRMED**. Historical pre-login and pre-save blockers below are superseded by the final live portal receipt in the last section.
+**Current status (1 November 2026, updated after moderator email): GraphFraud Agent PUBLISHED on Open Exchange and APPROVED FOR CONTEST 49.** Official organizer emails dated 2026-11-01 10:27:21 and 10:27:24 UTC independently confirm publication and contest approval. Canonical public listing: https://openexchange.intersystems.com/package/GraphFraud-Agent . **Award, ranking, prize and payout are not confirmed.** Sections below document the earlier pending-approval stage and should be read historically.
 
 ## Confirmed entry target
 
@@ -92,3 +92,12 @@ The original cause was confusing a filled form or HTTP 200 with persistence; rob
 ## Reusable submission automation (not Open Exchange-specific)
 
 Hunter now provides shared `scripts/submissions/` with a provider-independent lifecycle controller, authenticated dashboard reconciliation, pluggable portal adapters, a generic configurable browser form driver and an offline receipt verifier. The Open Exchange profile is based on actually inspected selectors; the Devpost/Codegeist adapter fails closed until a genuine logged-in form, public real demo video and production-signed judge install URL are available. 33 Node tests (including legacy guard tests) passed on hexagony-01. Real browser read-only integration of the new driver returned one GraphFraud entry with `Pending approval` after submission (1 Nov). See `scripts/submissions/README.md`. Do not call submit again for GraphFraud.
+
+## 1 November — organizer's definitive acceptance and publication receipts
+
+Following the verified `Pending approval` owner dashboard state, the connected entrant mailbox received **two official InterSystems Open Exchange emails from `noreply@openexchange.intersystems.com`**:
+
+- **2026-11-01 10:27:21 UTC** — subject **Your Application GraphFraud Agent has been approved**; body explicitly confirms **GraphFraud Agent has been published on InterSystems Open Exchange**, with canonical product listing https://openexchange.intersystems.com/package/GraphFraud-Agent .
+- **2026-11-01 10:27:24 UTC** — subject **Your Application GraphFraud Agent has been approved for the contest**; body explicitly confirms **GraphFraud Agent has been processed and approved for the contest InterSystems Programming Contest: AI Agents in Interoperability Workflows**, linked at https://openexchange.intersystems.com/contest/49 .
+
+These are direct organizer messages from the entrant's connected inbox; neither was inferred from a generic Save/Send button, browser toast or static listing count. **Status as of this receipt: `PUBLISHED` and `CONTEST_ACCEPTED`**. The contest page's anonymous public HTML may display a cached or JS-dependent count; that does not supersede the organizer's explicit acceptance email. **No winner/award/payment evidence.** Do not submit a duplicate product or contest entry.
