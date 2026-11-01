@@ -2,7 +2,7 @@
 
 **Author:** Daniel Paluszek · **Contest target:** [InterSystems AI Agents in Interoperability Workflows 2026](https://openexchange.intersystems.com/contest/49) · **License:** MIT
 
-> **Status (31 October 2026):** original deterministic engine implemented and 21/21 Node.js native tests pass locally (including the HTTP endpoint); IRIS production/AI Hub integration source is present **but has not yet been compiled, installed, started or tested against the licensed EAP build**. There is no claim of contest eligibility, submitted app, a working AI Hub provider, fraud identification or a prize.
+> **Status (1 November 2026):** original deterministic engine implemented; **29/29 native Node.js tests PASS** on hexagony-01 and actual HTTP smoke tests in rootless Docker returned 200/200 and the three correct motifs. Evidence: [native execution report](VALIDATION_2026-11-01.md). IRIS production/AI Hub integration source is present **but has not yet been compiled, installed, started or tested against the licensed EAP build**. There is no claim of contest eligibility, submitted app, a working AI Hub provider, fraud identification or a prize.
 
 ## What it does
 
